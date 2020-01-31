@@ -1245,10 +1245,19 @@ let (|FunType|) (t, ValInfo(argTypes, returnType)) =
 /// A rudimentary recognizer for extern functions
 /// Probably we should use lexing information to improve its accuracy
 let (|Extern|_|) = function
-    | Let(LetBinding([{ Attributes = [Attribute(name, _, _)]}] as ats, px, ao, _, _, PatLongIdent(_, s, [_, PatTuple ps], _), TypedExpr(Typed, _, t)))
-        when name.EndsWith("DllImport") ->
-        Some(ats, px, ao, t, s, ps)
-    | _ -> None
+    | Let(LetBinding(ats, px, ao, _, _, PatLongIdent(_, s, [_, PatTuple ps], _), TypedExpr(Typed, _, t))) ->
+        let hasDllImportAttr =
+            ats
+            |> List.exists (fun { Attributes = attrs } ->
+                attrs
+                |> List.exists (fun (Attribute(name,_,_)) ->
+                    name.EndsWith("DllImport")))
+        if hasDllImportAttr then
+            Some(ats, px, ao, t, s, ps)
+        else
+            None
+    | _ ->
+        None
 
 let private collectAttributesRanges (a:SynAttributes) =
     seq {
@@ -1285,7 +1294,14 @@ let getRangesFromAttributesFromSynBinding (sb: SynBinding) =
         attrs
         |> List.map (fun a -> a.Range)
 
+let getRangesFromAttributesFromSynValSig (valSig: SynValSig) =
+    match valSig with
+    | SynValSig.ValSpfn(attrs,_,_,_,_,_,_,_,_,_,_) ->
+        attrs
+        |> List.map (fun a -> a.Range)
+
 let getRangesFromAttributesFromSynMemberDefinition (mdn: SynMemberDefn) =
     match mdn with
     | SynMemberDefn.Member(mb,_) -> getRangesFromAttributesFromSynBinding mb
+    | SynMemberDefn.AbstractSlot(valSig, _, _) -> getRangesFromAttributesFromSynValSig valSig
     | _ -> []

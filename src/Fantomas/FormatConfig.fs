@@ -1,42 +1,42 @@
-﻿module Fantomas.FormatConfig
+module Fantomas.FormatConfig
 
 open System
 
 let SAT_SOLVE_MAX_STEPS = 100
 
-type FormatException(msg : string) =
+type FormatException(msg: string) =
     inherit Exception(msg)
 
 type Num = int
 
-type FormatConfig = 
+type FormatConfig =
     { /// Number of spaces for each indentation
-      IndentSpaceNum : Num
+      IndentSpaceNum: Num
       /// The column where we break to new lines
-      PageWidth : Num
-      SemicolonAtEndOfLine : bool
+      PageWidth: Num
+      SemicolonAtEndOfLine: bool
       SpaceBeforeParameter: bool
       SpaceBeforeLowercaseInvocation: bool
       SpaceBeforeUppercaseInvocation: bool
-      SpaceBeforeClassConstructor : bool
-      SpaceBeforeMember : bool
-      SpaceBeforeColon : bool
-      SpaceAfterComma : bool
-      SpaceBeforeSemicolon : bool
-      SpaceAfterSemicolon : bool
-      IndentOnTryWith : bool
-      SpaceAroundDelimiter : bool
+      SpaceBeforeClassConstructor: bool
+      SpaceBeforeMember: bool
+      SpaceBeforeColon: bool
+      SpaceAfterComma: bool
+      SpaceBeforeSemicolon: bool
+      SpaceAfterSemicolon: bool
+      IndentOnTryWith: bool
+      SpaceAroundDelimiter: bool
       MaxIfThenElseShortWidth: Num
       MaxInfixOperatorExpression: Num
       MaxRecordWidth: Num
       MaxArrayOrListWidth: Num
       MaxLetBindingWidth: Num
-      MultilineBlockBracketsOnSameColumn : bool
+      MultilineBlockBracketsOnSameColumn: bool
       NewlineBetweenTypeDefinitionAndMembers: bool
       /// Prettyprinting based on ASTs only
-      StrictMode : bool }
+      StrictMode: bool }
 
-    static member Default = 
+    static member Default =
         { IndentSpaceNum = 4
           PageWidth = 120
           SemicolonAtEndOfLine = false
@@ -62,13 +62,14 @@ type FormatConfig =
 
     static member applyOptions(currentConfig, options) =
         let currentValues = Reflection.getRecordFields currentConfig
+
         let newValues =
-            Array.fold (fun acc (k,v) ->
-                Array.map (fun (fn, ev) -> if fn = k then (fn, v) else (fn,ev)) acc
-            ) currentValues options
+            Array.fold (fun acc (k, v) -> Array.map (fun (fn, ev) -> if fn = k then (fn, v) else (fn, ev)) acc)
+                currentValues options
             |> Array.map snd
+
         let formatConfigType = FormatConfig.Default.GetType()
-        Microsoft.FSharp.Reflection.FSharpValue.MakeRecord (formatConfigType, newValues) :?> FormatConfig
+        Microsoft.FSharp.Reflection.FSharpValue.MakeRecord(formatConfigType, newValues) :?> FormatConfig
 
 type FormatConfigFileParseResult =
     | Success of FormatConfig
